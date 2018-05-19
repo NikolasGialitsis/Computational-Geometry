@@ -1,0 +1,8 @@
+#gnuplot script
+set title "Convex Hull 3"
+set xlabel "xcord"
+set ylabel "ycord"
+set zlabel "zcord"
+
+splot "output.txt" u 1:2:3 with points pointtype 7 pointsize 1 title "Convex Hull 3" 
+pause -1 "Hit any key to continue"
