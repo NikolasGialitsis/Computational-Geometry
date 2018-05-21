@@ -47,4 +47,8 @@ CGAL/IO/Polyhedron_geomview_ostream.h
 -
 CGAL/Polyhedron_incremental_builder_3.h
 -
+CGAL/enum.h
+-
+CGAL/IO/Color.h
+-
 

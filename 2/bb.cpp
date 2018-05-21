@@ -31,6 +31,9 @@
 
 
 #include <CGAL/Polyhedron_incremental_builder_3.h>
+#include <CGAL/enum.h>
+
+#include <CGAL/IO/Color.h>
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
 typedef CGAL::Polyhedron_3<Kernel> 			 Polyhedron;
@@ -43,7 +46,10 @@ typedef Kernel::Point_3 Point_3;
 typedef Kernel::Vector_3  Vector;
 typedef Kernel::Plane_3 Plane_3;
 typedef std::vector<Plane_3> Plane_Vector;
+typedef std::vector<const Plane_3> Plane_Vector2;
+
 typedef std::vector<Plane_3>::const_iterator Plane_iterator;
+
 
 typedef std::vector<Point_3> pvector3;
 typedef std::vector<Point_3>::iterator viterator;
@@ -69,6 +75,22 @@ struct Plane_equation {
 		return Plane(h->vertex()->point() , h->next()->vertex()->point(),h->next()->next()->vertex()->point());
 	}
 };
+
+/*
+template <class Refs>
+struct My_face : public CGAL::HalfedgeDS_face_base<Refs> {
+    CGAL::Color color;
+};
+
+
+
+struct My_items : public CGAL::Polyhedron_items_3 {
+    template <class Refs, class Traits>
+    struct Face_wrapper {
+        typedef My_face<Refs> Face;
+    };
+};
+*/
 
 
 int main(int argc,char* argv[]){
@@ -109,22 +131,10 @@ int main(int argc,char* argv[]){
 	Halfedge_handle h = P.make_tetrahedron(p,q,r,s);
 	assert(P.is_valid());
 
-	/*CGAL::Geomview_stream gv(CGAL::Bbox_3(-2*radius, -2*radius, -2*radius,2*radius,2*radius,2*radius));
-
-	gv.set_line_width(4);
-	gv.set_bg_color(CGAL::Color(0, 200, 200));
-	gv << CGAL::BLUE;
-	std::cout << "Drawing Polyhedron.\n";
-
-	gv << P;
-	std::cout << "Enter a key to finish" << std::endl;
-	char ch;
-	std::cin >> ch;
-*/
 
 
 	std::cout << "Facets " << std::endl;
-	int fn = 1;
+	int fn = 0;
   	for (Facet_iterator iter=P.facets_begin(); iter!=P.facets_end(); ++iter){
 		HF hf = iter->facet_begin();
 		std::cout << "\nFacet "<< fn++ << std::endl;
@@ -146,15 +156,53 @@ int main(int argc,char* argv[]){
 	Point_3 new_point = *vi;
 
 	
-	for(Plane_iterator I = V.begin(); I != V.end(); I++){
-		std::cout<<". "<<std::endl;
-		I->oriented_side(new_point); 
-	}
+
 
 	
 
+	std::vector<int> BLUE,RED;
+
+	fn = 0;
+	for(Plane_iterator I = V.begin(); I != V.end(); I++){
+		std::cout<<". "<<std::endl;
+		CGAL::Oriented_side orientation = I->oriented_side(new_point)  ;
+		if( orientation == CGAL::ON_POSITIVE_SIDE ){
+			std::cout<<"\tPositive"<<std::endl;
+			RED.insert(fn);
+
+		}
+
+		else if (orientation == CGAL::ON_NEGATIVE_SIDE ){
+			std::cout<<"\tNegative"<<std::endl;	
+			BLUE.insert(fn);
+
+		}
+		else {
+			std::cout << "\tCollinear"<<std::endl;
+			return -1;
+		}
+
+		fn++;
+	}
+	std::cout<<"\nBLUE"<<std::endl;
+	std::copy( BLUE.begin(), BLUE.end(), std::ostream_iterator<int>( std::cout, "\n"));
+
+	std::cout<<"\nRED"<<std::endl;
+	std::copy( RED.begin(), RED.end(), std::ostream_iterator<int>( std::cout, "\n"));;
 
 
+	/*CGAL::Geomview_stream gv(CGAL::Bbox_3(-2*radius, -2*radius, -2*radius,2*radius,2*radius,2*radius));
+
+	gv.set_line_width(4);
+	gv.set_bg_color(CGAL::Color(0, 200, 200));
+	gv << CGAL::BLUE;
+	std::cout << "Drawing Polyhedron.\n";
+
+	gv << P;
+	gv << new_point;
+	std::cout << "Enter a key to finish" << std::endl;
+	char ch;
+	std::cin >> ch;*/
 
 
   	return 0;
