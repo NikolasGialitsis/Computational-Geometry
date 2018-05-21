@@ -1,0 +1,3 @@
+/home/superuser/cgal/Ergasia2/2/CMakeFiles/edit_cache.dir
+/home/superuser/cgal/Ergasia2/2/CMakeFiles/rebuild_cache.dir
+/home/superuser/cgal/Ergasia2/2/CMakeFiles/bb.dir
