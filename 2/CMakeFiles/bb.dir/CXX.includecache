@@ -51,4 +51,8 @@ CGAL/enum.h
 -
 CGAL/IO/Color.h
 -
+CGAL/HalfedgeDS_items_2.h
+-
+CGAL/HalfedgeDS_default.h
+-
 

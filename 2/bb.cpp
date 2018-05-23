@@ -35,7 +35,8 @@
 #include <CGAL/enum.h>
 
 #include <CGAL/IO/Color.h>
-
+#include <CGAL/HalfedgeDS_items_2.h>
+#include <CGAL/HalfedgeDS_default.h>
 
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
@@ -65,10 +66,33 @@ typedef Polyhedron::Edge_iterator Edge_iterator;
 typedef Polyhedron::Facet_iterator Facet_iterator;
 typedef Polyhedron::Halfedge_handle Halfedge_handle;
 
+typedef Polyhedron::HalfedgeDS HalfedgeDS;
+
+
+typedef Polyhedron::Facet Facet;
+
+typedef struct FV{//Facet Vertices
+	Point_3 p;
+	Facet f;
+}FV;
+
+
 
 bool Sort(Point_3& a,Point_3& b){
   return a.hx() > b.hx();
 }
+
+
+
+bool PointSort(FV& a,FV& b){
+  return a.p < b.p;
+}
+
+
+bool AreSame(FV& a,FV& b){
+  return (a.p ==  b.p);
+}
+
 
 struct Plane_equation {
 	template <class Facet>
@@ -79,21 +103,7 @@ struct Plane_equation {
 	}
 };
 
-/*
-template <class Refs>
-struct My_face : public CGAL::HalfedgeDS_face_base<Refs> {
-    CGAL::Color color;
-};
 
-
-
-struct My_items : public CGAL::Polyhedron_items_3 {
-    template <class Refs, class Traits>
-    struct Face_wrapper {
-        typedef My_face<Refs> Face;
-    };
-};
-*/
 
 // A modifier creating a triangle with the incremental builder.
 template <class HDS>
@@ -102,10 +112,11 @@ public:
 
 	Point_3 p;
 	std::vector<Point_3> v;
-    Build_pyramid(std::vector<Point_3> purple_vertices ,Point_3& new_point) {
+    Build_pyramid(std::vector<FV> purple_vertices ,Point_3& new_point) {
     	v.reserve(purple_vertices.size());
     	for(int  i = 0 ; i < purple_vertices.size() ; i++){
-    		v.push_back(purple_vertices.at(i));
+    		v.push_back(purple_vertices.at(i).p);
+    		std::cout<<"Purple vertices: "<<purple_vertices.at(i).p<<std::endl;
     	}
     	p = new_point;
     	
@@ -133,10 +144,29 @@ public:
     }
 };
 
+                        
+
+template <class Refs>
+struct My_face : public CGAL::HalfedgeDS_face_base<Refs> {
+    CGAL::Color color;
+    My_face() {}
+    My_face( CGAL::Color c) : color(c) {}
+};
+// An items type using my face.
+struct My_items : public CGAL::HalfedgeDS_items_2 {
+    template <class Refs, class Traits>
+    struct Face_wrapper {
+        typedef My_face<Refs> Face;
+    };
+};
+struct My_traits { // arbitrary point type, not used here.
+    typedef int  Point_2;
+};
 
 
-typedef Polyhedron::HalfedgeDS HalfedgeDS;
-
+typedef CGAL::HalfedgeDS_default<My_traits, My_items> HDS;
+typedef HDS::Face                                     Face;
+typedef HDS::Face_handle Face_handle;
 
 int main(int argc,char* argv[]){
 
@@ -173,11 +203,11 @@ int main(int argc,char* argv[]){
 	assert(P.is_valid());
 
 
-	std::vector<HF> Facet_V;
+	std::vector<Facet> Facet_V;
 	std::cout << "Facets " << std::endl;
 	int fn = 0;
   	for (Facet_iterator iter=P.facets_begin(); iter!=P.facets_end(); ++iter){
-  		Facet_V.push_back(iter->facet_begin());
+  		Facet_V.push_back(*iter);
 		HF hf = iter->facet_begin();
 
 		std::cout << "\nFacet "<< fn++ << std::endl;
@@ -235,90 +265,119 @@ int main(int argc,char* argv[]){
 
 
 
-		std::vector<Point_3> purple_vertices;
+		std::vector<FV> purple_vertices;
 		purple_vertices.reserve(3);
-		std::vector<Point_3> red_vertices;
-		std::vector<Point_3> blue_vertices;
+		std::vector<FV> red_vertices;
+		std::vector<FV> blue_vertices;
 		for(int i = 0 ;i < RED.size() ; i++){
 
 
-			HF red_facet = Facet_V.at(RED.at(i));
+			Facet red_facet = Facet_V.at(RED.at(i));
+			HF circ = red_facet.facet_begin();
 			do{
-				red_vertices.push_back(red_facet->vertex()->point()) ;		
+
+				FV new_struct;
+				new_struct.p = circ->vertex()->point();
+				new_struct.f = red_facet;
+				red_vertices.push_back(new_struct) ;		
 			
-	 		}while((++red_facet) != Facet_V.at(RED.at(i)));
+	 		}while((++circ) !=red_facet.facet_begin());
 	 	}
 
-		for(int j = 0 ; j < BLUE.size() ; j++){
-			HF blue_facet = Facet_V.at(BLUE.at(j));
+
+
+		for(int i = 0 ;i < BLUE.size() ; i++){
+
+
+			Facet blue_facet = Facet_V.at(BLUE.at(i));
+			HF circ = blue_facet.facet_begin();
 			do{
-				blue_vertices.push_back(blue_facet->vertex()->point()) ;		
 
-	 		}while((++blue_facet) != Facet_V.at(BLUE.at(j)));
+				FV new_struct;
+				new_struct.p = circ->vertex()->point();
+				new_struct.f = blue_facet;
+				blue_vertices.push_back(new_struct) ;		
+			
+	 		}while((++circ) !=blue_facet.facet_begin());
+	 	}
+
+		std::vector<FV>::iterator result ;
+				
+		std::sort(red_vertices.begin(), red_vertices.end(),PointSort);
+		std::sort(blue_vertices.begin(), blue_vertices.end(),PointSort);
+
+		std::cout<<"Red Vertices: "<<std::endl;
+		for(std::vector<FV>::iterator iter = red_vertices.begin();iter != red_vertices.end();iter++){
+			std::cout << "\t" << iter->p << std::endl;
 		}
-		
-
-		std::vector<Point_3>::iterator result ;
-		
-		std::sort(red_vertices.begin(), red_vertices.end());
-		std::vector<Point_3>::iterator it = std::unique(red_vertices.begin(), red_vertices.end());
+		std::vector<FV>::iterator it = std::unique(red_vertices.begin(), red_vertices.end(),AreSame);
 		red_vertices.erase(it,red_vertices.end());
+		
+		std::cout<<"Blue Vertices: "<<std::endl;
+		for(std::vector<FV>::iterator iter = blue_vertices.begin();iter != blue_vertices.end();iter++){
+			std::cout << "\t" << iter->p << std::endl;
+		}
 
-		std::sort(blue_vertices.begin(), blue_vertices.end());
-		it = std::unique(blue_vertices.begin(), blue_vertices.end());
+		
+		it = std::unique(blue_vertices.begin(), blue_vertices.end(),AreSame);
 		blue_vertices.erase(it,blue_vertices.end());
-
-
-		std::set_intersection(red_vertices.begin(),red_vertices.end() ,blue_vertices.begin(), blue_vertices.end(), std::back_inserter(purple_vertices));
-		
-		std::cout<< "\nRed :"<<std::endl;
-
-		std::copy( red_vertices.begin(), red_vertices.end(), std::ostream_iterator<Point_3>( std::cout, "\n"));
-		std::cout<< "\nBlue :"<<std::endl;
-
-
-		std::copy( blue_vertices.begin(), blue_vertices.end(), std::ostream_iterator<Point_3>( std::cout, "\n"));
-
-		std::cout<< "\nPurple :"<<std::endl;
-
-
-		std::copy( purple_vertices.begin(), purple_vertices.end(), std::ostream_iterator<Point_3>( std::cout, "\n"));
-
-
-
-
-
 		
 
+		std::set_intersection(red_vertices.begin(),red_vertices.end() ,blue_vertices.begin(), blue_vertices.end(), std::back_inserter(purple_vertices),PointSort);
 		
 		gv.clear();
 		gv.set_line_width(12);
-		gv.set_bg_color(CGAL::WHITE);
-		
-		std::cout << "Drawing Polyhedron.\n";
-		
+		gv.set_bg_color(CGAL::WHITE);		
+		std::cout << "Drawing Polyhedron.\n";		
 		gv << CGAL::BLUE;
 		gv << P;
 		gv << CGAL::RED;
-
-
-
 		gv << new_point;
 
+		
+		std::cout<<"After:Red Vertices: "<<std::endl;
+		for(std::vector<FV>::iterator iter = red_vertices.begin();iter != red_vertices.end();iter++){
+			std::cout << "\t" << iter->p << std::endl;
+		}
+		std::cout<<"After:Blue Vertices: "<<std::endl;
+		for(std::vector<FV>::iterator iter = blue_vertices.begin();iter != blue_vertices.end();iter++){
+			std::cout << "\t" << iter->p << std::endl;
+		}
+
+
 		gv << CGAL::PURPLE;
-
-		 
-	/*	for(std::vector<Point_3>::iterator iter = purple_vertices.begin();iter != purple_vertices.end();iter++){
-
-			Point_3 p = *iter;
+		std::cout<<"Purple Vertices: "<<std::endl;
+		for(std::vector<FV>::iterator iter = purple_vertices.begin();iter != purple_vertices.end();iter++){
+			std::cout << "\t" << iter->p << std::endl;
+			Point_3 p = iter->p;
 			gv << p;
 		}
-	*/
+	
 
-	    Build_pyramid<HalfedgeDS> pyramid(purple_vertices,new_point);
-	    P.delegate(pyramid);
 
-	    sleep(5);
+
+/*Erase Red Facets*/
+
+
+
+/*
+		for(std::vector<FV>::iterator iter = purple_vertices.begin();iter != purple_vertices.end();iter++){
+
+			P.erase_facet(iter->f.facet_begin());
+			std::cout<<"Erased"<<std::endl;
+			
+		}
+
+*/
+
+   	  	Build_pyramid<HalfedgeDS> pyramid(purple_vertices,new_point);
+	 	P.delegate(pyramid);
+
+
+
+
+
+	    sleep(1);
 		gv.clear();
 		gv << CGAL::GREEN;
 		gv << P;
