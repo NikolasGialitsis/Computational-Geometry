@@ -105,7 +105,7 @@ struct Plane_equation {
 
 
 
-// A modifier creating a triangle with the incremental builder.
+// A modifier creating a pyramid with the incremental builder.
 template <class HDS>
 class Build_pyramid : public CGAL::Modifier_base<HDS> {
 public:
@@ -360,11 +360,14 @@ int main(int argc,char* argv[]){
 
 
 
-/*
+	/*	HDS hds;
 		for(std::vector<FV>::iterator iter = purple_vertices.begin();iter != purple_vertices.end();iter++){
 
-			P.erase_facet(iter->f.facet_begin());
-			std::cout<<"Erased"<<std::endl;
+		
+			//P.erase_facet(iter->f.facet_begin());
+			hds.faces_push_back(Face(iter->f.facet_begin()));
+
+			//std::cout<<"Erased"<<std::endl;
 			
 		}
 
@@ -377,8 +380,8 @@ int main(int argc,char* argv[]){
 
 
 
-	    sleep(1);
-		gv.clear();
+	    //sleep(1);
+		//gv.clear();
 		gv << CGAL::GREEN;
 		gv << P;
 		

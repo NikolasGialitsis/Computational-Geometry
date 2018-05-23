@@ -62,7 +62,9 @@ int main(int argc,char* argv[]){
 	std::cout << "Get " << N << " random points"<<std::endl;
 
 	CGAL::Random_points_in_sphere_3<Point_3> gen (radius);
-	for (int i = 0; i < N; i++)  CH.insert (*gen++);
+	for (int i = 0; i < N; i++) {		
+		CH.insert (*gen++);
+	} 
 	assert(CH.is_valid());
 
 	Polyhedron poly;
@@ -86,7 +88,7 @@ int main(int argc,char* argv[]){
 	std::cout << "Drawing Polyhedron.\n";
 
 	gv << poly;
-	sleep(3);
+	sleep(10);
 	gv.clear();
 	gv << CGAL::WHITE;
 	std::cout << "Drawing Convex Vertices.\n";
@@ -109,6 +111,10 @@ int main(int argc,char* argv[]){
 	std::cout << "Enter a key to finish" << std::endl;
 	char ch;
 	std::cin >> ch;
+
+
+
+
 
   	return 0;
 }
