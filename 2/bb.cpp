@@ -323,16 +323,7 @@ int main(int argc,char* argv[]){
 		blue_vertices.erase(it,blue_vertices.end());
 		
 
-		std::set_intersection(red_vertices.begin(),red_vertices.end() ,blue_vertices.begin(), blue_vertices.end(), std::back_inserter(purple_vertices),PointSort);
-		
-		gv.clear();
-		gv.set_line_width(12);
-		gv.set_bg_color(CGAL::WHITE);		
-		std::cout << "Drawing Polyhedron.\n";		
-		gv << CGAL::BLUE;
-		gv << P;
-		gv << CGAL::RED;
-		gv << new_point;
+
 
 		
 		std::cout<<"After:Red Vertices: "<<std::endl;
@@ -345,39 +336,78 @@ int main(int argc,char* argv[]){
 		}
 
 
+		std::set_intersection(red_vertices.begin(),red_vertices.end() ,blue_vertices.begin(), blue_vertices.end(), std::back_inserter(purple_vertices),PointSort);
+		
+
+
+		gv.clear();
+		gv.set_line_width(12);
+		gv.set_bg_color(CGAL::WHITE);		
+		std::cout << "Drawing Polyhedron.\n";		
+		gv << CGAL::BLUE;
+		gv << P;
+		gv << CGAL::RED;
+		gv << new_point;
+
+
 		gv << CGAL::PURPLE;
 		std::cout<<"Purple Vertices: "<<std::endl;
 		for(std::vector<FV>::iterator iter = purple_vertices.begin();iter != purple_vertices.end();iter++){
 			std::cout << "\t" << iter->p << std::endl;
 			Point_3 p = iter->p;
-			gv << p;
+			gv << p;	
+			
 		}
+
+		std::cout<<std::endl<<std::endl<<"Remove purple from red"<<std::endl;
+		for(std::vector<FV>::iterator iter = purple_vertices.begin();iter != purple_vertices.end();iter++){
+
+			std::cout << "Outer loop" << std::endl;
+			Point_3 p = iter->p;
+			gv << p;
+
+			
+ 			for(std::vector<FV>::iterator red_iter = red_vertices.begin();red_iter != red_vertices.end();red_iter++){
+ 				std::cout<<"\tInner loop"<<std::endl;
+ 				if(!red_vertices.empty()){
+					if((red_iter->p == p)){
+						red_vertices.erase(red_iter);
+						std::cout<<"\t\terased purple"<<std::endl;
+						break;
+					}
+				}
+				else break;
+			}
+		}
+		
+		
+		
+
+	
 	
 
 
 
-/*Erase Red Facets*/
 
 
-
-	/*	HDS hds;
-		for(std::vector<FV>::iterator iter = purple_vertices.begin();iter != purple_vertices.end();iter++){
-
-		
-			//P.erase_facet(iter->f.facet_begin());
-			hds.faces_push_back(Face(iter->f.facet_begin()));
-
-			//std::cout<<"Erased"<<std::endl;
-			
-		}
-
-*/
 
    	  	Build_pyramid<HalfedgeDS> pyramid(purple_vertices,new_point);
 	 	P.delegate(pyramid);
 
 
 
+	 	std::cout<<"Erasing red facets "<<std::endl;
+		for(std::vector<FV>::iterator iter = red_vertices.begin();iter != red_vertices.end();iter++){
+
+			Facet::Halfedge_handle h = iter->f.halfedge();
+			P.erase_facet(iter->f.halfedge());
+			std::cout<<"Erased"<<std::endl;
+			sleep(10);
+		}
+		
+
+
+		
 
 
 	    //sleep(1);
